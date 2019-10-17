@@ -11,6 +11,7 @@ from time import sleep
 from threading import Thread, Event
 from can.interface import Bus
 from pynput.keyboard import Key, Listener
+from graphics import Gui
 
 class Control():
     def __init__(self, source, bus):
@@ -26,8 +27,8 @@ class Control():
         #self.speed += self.acceleration * self.dt
         if self.speed < 0:
             self.speed = 0
-        elif self.speed > 260:
-            self.speed = 260
+        elif self.speed > 220:
+            self.speed = 220
         self.get_rpm()
         self.phys()
         sys.stdout.write("\rspeed: {} rpm: {}".format(self.speed, self.rpm))
@@ -78,7 +79,8 @@ class MainLoop():
         self.controller = controller
         self.releaseEvent = Event()
         self.c_thread = ControlThread(self.controller)
-        self.t_thread = TimerThread(self.releaseEvent, self.controller)
+        self.t_thread = TimerThread(self.controller, self.releaseEvent)
+        self.g_thread = GraphicsThread(self.controller)
 
     def on_press(self, key):
         if hasattr(key, 'char'):
@@ -108,12 +110,13 @@ class MainLoop():
         print("Press w to accelerate, s to brake")
         self.c_thread.start()
         self.t_thread.start()
+        self.g_thread.start()
         with Listener(on_press=self.on_press,on_release=self.on_release) as listener:
             listener.join()
         self.thread.join()
 
 class TimerThread(Thread):
-    def __init__(self, event, controller):
+    def __init__(self, controller, event):
         super().__init__()
         self.released = event
         self.controller = controller
@@ -138,6 +141,22 @@ class ControlThread(Thread):
             self.controller.update()
             sleep(.5)
 
+class GraphicsThread(Thread):
+    def __init__(self, controller):
+        super().__init__()
+        self.controller = controller
+        self.gui = Gui()
+
+    def run(self):
+        while True:
+            self.updateGui()
+
+    def updateGui(self):
+        self.gui.rotate_speed_needle(self.controller.speed)
+        self.gui.rotate_tac_needle(self.controller.rpm * (220/8))
+        self.gui.refresh_gui()
+
+    
 
 def is_valid_file(parser, arg):
     if not os.path.exists(arg):
@@ -147,7 +166,7 @@ def is_valid_file(parser, arg):
 def getArgs():
     parser = argparse.ArgumentParser(description="Script to write CAN messages to given virtual CAN socket.")
     parser.add_argument("-s", "--socket", metavar="SOCKET", help="Name of virtual CAN socket, e.g. vcan0.", default='vcan0')
-    parser.add_argument("-d", "--dbc", metavar="FILE", help="dbc file to import messages from.",type=lambda x: is_valid_file(parser, x))
+    parser.add_argument("dbc",metavar="DBC_FILE", help="dbc file to import messages from.",type=lambda x: is_valid_file(parser, x))
     parser.add_argument("-r", "--random", help="run cangen while this script is running", action='store_true')
 
     args = parser.parse_args()
