@@ -74,6 +74,14 @@ class Control():
         self.speed -=.25
         self.send_message('AcceleratorBrake', {'Accelerator':0,'Brake':1})
 
+    def steer_L(self):
+        self.send_message('Steering', {'Steer_L':1,'Steer_R':0})
+
+    def steer_R(self):
+        self.send_message('Steering', {'Steer_L':0,'Steer_R':1})
+
+
+
 class MainLoop():
     def __init__(self, controller):
         self.controller = controller
@@ -90,6 +98,10 @@ class MainLoop():
                 self.t_thread.pressed.add('w')
             if key.char=='s':
                 self.t_thread.pressed.add('s')
+            if key.char=='a':
+                self.t_thread.pressed.add('a')
+            if key.char=='d':
+                self.t_thread.pressed.add('d')
         self.releaseEvent.set()
 
     def on_release(self, key):
@@ -99,6 +111,10 @@ class MainLoop():
                 self.t_thread.pressed.remove('w')
             elif key.char=='s':
                 self.t_thread.pressed.remove('s')
+            elif key.char == 'a':
+                self.t_thread.pressed.remove('a')
+            elif key.char=='d':
+                self.t_thread.pressed.remove('d')
         if key == Key.esc:
             # Stop listener
             return False
@@ -129,6 +145,11 @@ class TimerThread(Thread):
                     self.controller.accelerate()
                 elif 's' in self.pressed:
                     self.controller.brake()
+                elif 'a' in self.pressed:
+                    self.controller.steer_L()
+                elif 'd' in self.pressed:
+                    self.controller.steer_R()
+
                 sleep(.05)              
 
 class ControlThread(Thread):
