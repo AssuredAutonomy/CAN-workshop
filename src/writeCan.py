@@ -21,6 +21,7 @@ class Control():
         self.speed = 0
         self.rpm = 0
         self.dt = .12
+        self.steering_angle = 0
 
     def update(self):
         self.speed -= .825
@@ -30,6 +31,14 @@ class Control():
         elif self.speed > 220:
             self.speed = 220
         self.get_rpm()
+        if self.steering_angle < -10:
+            self.steering_angle += 10
+        elif self.steering_angle > 10:
+            self.steering_angle -= 10
+        elif -5 > self.steering_angle > -10:
+            self.steering_angle += 5
+        elif 10 > self.steering_angle > 5:
+            self.steering_angle -= 5
         self.phys()
         sys.stdout.write("\rspeed: {} rpm: {}".format(self.speed, self.rpm))
         sys.stdout.flush()
@@ -75,9 +84,11 @@ class Control():
         self.send_message('AcceleratorBrake', {'Accelerator':0,'Brake':1})
 
     def steer_L(self):
+        self.steering_angle -= 30
         self.send_message('Steering', {'Steer_L':1,'Steer_R':0})
 
     def steer_R(self):
+        self.steering_angle += 30
         self.send_message('Steering', {'Steer_L':0,'Steer_R':1})
 
     def turn_L(self):
