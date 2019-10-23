@@ -95,6 +95,8 @@ class MainLoop():
         self.c_thread = ControlThread(self.controller)
         self.t_thread = TimerThread(self.controller, self.releaseEvent)
         self.g_thread = GraphicsThread(self.controller)
+        self.q_state = 0
+        self.e_state = 0
 
     def on_press(self, key):
         if hasattr(key, 'char'):
@@ -126,9 +128,23 @@ class MainLoop():
             elif key.char=='d':
                 self.t_thread.pressed.remove('d')
             elif key.char=='q':
-                self.t_thread.pressed.remove('q')
+                if self.q_state==0:
+                    self.q_state = 1
+                    if self.e_state == 1:
+                        self.e_state = 0
+                        self.t_thread.pressed.remove('e')
+                else:
+                    self.t_thread.pressed.remove('q')
+                    self.q_state = 0
             elif key.char=='e':
-                self.t_thread.pressed.remove('e')
+                if self.e_state==0:
+                    self.e_state = 1
+                    if self.q_state == 1:
+                        self.q_state = 0
+                        self.t_thread.pressed.remove('q')
+                else:
+                    self.t_thread.pressed.remove('e')
+                    self.e_state = 0
         if key == Key.esc:
             # Stop listener
             return False
