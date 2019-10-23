@@ -59,9 +59,10 @@ class Gui():
         self.speed_needle.angle = self.root_needle_angle + angle
 
     def rotate_steering_wheel(self, angle):
-        self.steer_wheel.angle = self.steering_wheel.angle + angle
+        self.steering_wheel.angle = angle
 
 class needleEntity(sdl2.ext.Entity):
     def __init__(self, world, sprite, angle):
         self.sprite = sprite
         self.angle = angle
+
