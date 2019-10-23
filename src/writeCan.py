@@ -80,6 +80,12 @@ class Control():
     def steer_R(self):
         self.send_message('Steering', {'Steer_L':0,'Steer_R':1})
 
+    def turn_L(self):
+        self.send_message('TurnSignals', {'Turn_Sig_L': 1, 'Turn_Sig_R': 0})
+
+    def turn_R(self):
+        self.send_message('TurnSignals', {'Turn_Sig_L': 0, 'Turn_Sig_R': 1})
+
 
 
 class MainLoop():
@@ -102,19 +108,27 @@ class MainLoop():
                 self.t_thread.pressed.add('a')
             if key.char=='d':
                 self.t_thread.pressed.add('d')
+            if key.char=='q':
+                self.t_thread.pressed.add('q')
+            if key.char=='e':
+                self.t_thread.pressed.add('e')
         self.releaseEvent.set()
 
     def on_release(self, key):
-        self.releaseEvent.clear()
+        #self.releaseEvent.clear()
         if hasattr(key, 'char'):
             if key.char=='w':
                 self.t_thread.pressed.remove('w')
             elif key.char=='s':
                 self.t_thread.pressed.remove('s')
-            elif key.char == 'a':
+            elif key.char=='a':
                 self.t_thread.pressed.remove('a')
             elif key.char=='d':
                 self.t_thread.pressed.remove('d')
+            elif key.char=='q':
+                self.t_thread.pressed.remove('q')
+            elif key.char=='e':
+                self.t_thread.pressed.remove('e')
         if key == Key.esc:
             # Stop listener
             return False
@@ -141,14 +155,18 @@ class TimerThread(Thread):
     def run(self):
         while True:
             if self.released.wait():
-                if 'w' in self.pressed:
+                if 'w' in self.pressed and 's' not in self.pressed:
                     self.controller.accelerate()
                 elif 's' in self.pressed:
                     self.controller.brake()
-                elif 'a' in self.pressed:
+                if 'a' in self.pressed and 'd' not in self.pressed:
                     self.controller.steer_L()
                 elif 'd' in self.pressed:
                     self.controller.steer_R()
+                if 'q' in self.pressed and 'd' not in self.pressed:
+                    self.controller.turn_L()
+                elif 'e' in self.pressed:
+                    self.controller.turn_R()
 
                 sleep(.05)              
 
