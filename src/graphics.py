@@ -80,8 +80,12 @@ class Gui():
             self.turnSig_L.angle = angle
             self.turnSig_R.angle = angle
         elif angle == 1:
+            if self.turnSig_R != 0:
+                self.turnSig_R.angle = 0
             self.turnSig_L.angle = angle
         elif angle == 2:
+            if self.turnSig_L != 0:
+                self.turnSig_L.angle = 0
             self.turnSig_R.angle = angle
 
 class needleEntity(sdl2.ext.Entity):

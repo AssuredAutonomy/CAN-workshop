@@ -231,7 +231,7 @@ class ControlThread(Thread):
     def run(self):
         while True:
             self.controller.update()
-            sleep(.3)
+            sleep(.2)
 
 class GraphicsThread(Thread):
     def __init__(self, controller):
