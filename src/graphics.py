@@ -14,7 +14,7 @@ class Gui():
         self.speed_needle = self.factory.from_image("img/Pointer.png")
         self.turnSig_L = self.factory.from_image("img/turnSig_L.png")
         self.turnSig_R = self.factory.from_image("img/turnSig_R.png")
-        self.steering_wheel = self.factory.from_image("img/steering_wheel.png")
+        self.steering_wheel = self.factory.from_image("img/steering_wheel2.png")
 
 
         def set_gui():
@@ -24,8 +24,8 @@ class Gui():
             self.speed_needle.y = 78
             self.tac_needle.angle = 160
             self.speed_needle.angle = 160
-            self.steering_wheel.x = 400
-            self.steering_wheel.y = 350
+            self.steering_wheel.x = 120
+            self.steering_wheel.y = 330
             self.steering_wheel.angle = 0
             self.turnSig_L.x = 435
             self.turnSig_L.y = 150
