@@ -30,7 +30,7 @@ class Control():
     def update(self):
 
         if self.isDriving == 0:
-            self.speed -= .5
+            self.speed -= 1
         #self.speed += self.acceleration * self.dt
         if self.speed < 0:
             self.speed = 0
@@ -39,10 +39,14 @@ class Control():
         self.get_rpm()
 
         if self.isSteering == 0:
-            if self.steering_angle <= -30:
+            if -180 <= self.steering_angle <= -30:
                 self.steering_angle += 30
-            elif self.steering_angle >= 30:
+            elif 180 >= self.steering_angle >= 30:
                 self.steering_angle -= 30
+            elif self.steering_angle <= -180:
+                self.steering_angle += 60
+            elif self.steering_angle >= 180:
+                self.steering_angle -= 60
             elif -5 >= self.steering_angle > -30:
                 self.steering_angle += 5
             elif 30 > self.steering_angle >= 5:
