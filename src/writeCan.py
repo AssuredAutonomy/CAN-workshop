@@ -21,17 +21,37 @@ class Control():
         self.speed = 0
         self.rpm = 0
         self.dt = .12
+        self.steering_angle = 0
+        self.isSteering = 0
+        self.isDriving = 0
+        self.isStopped = 1
+        self.turnSig_state = 0
 
     def update(self):
-        self.speed -= .825
+
+        if self.isDriving == 0:
+            self.speed -= .5
         #self.speed += self.acceleration * self.dt
         if self.speed < 0:
             self.speed = 0
         elif self.speed > 220:
             self.speed = 220
         self.get_rpm()
+
+        if self.isSteering == 0:
+            if self.steering_angle <= -30:
+                self.steering_angle += 30
+            elif self.steering_angle >= 30:
+                self.steering_angle -= 30
+            elif -5 >= self.steering_angle > -30:
+                self.steering_angle += 5
+            elif 30 > self.steering_angle >= 5:
+                self.steering_angle -= 5
+            elif 5 >= self.steering_angle >= -5:
+                self.steering_angle = 0
+
         self.phys()
-        sys.stdout.write("\rspeed: {} rpm: {}".format(self.speed, self.rpm))
+        sys.stdout.write("\rspeed: {} rpm: {} Steer Angle: {} TurnSig: {}".format(self.speed, self.rpm, self.steering_angle, self.turnSig_state))
         sys.stdout.flush()
     
     def get_rpm(self):
@@ -67,23 +87,27 @@ class Control():
         self.send_message('PhysSensors', {'Service_Light':0,'RPM':self.rpm, 'Vehicle_Speed':self.speed})
 
     def accelerate(self):
-        self.speed += .5
+        self.speed += 1.5
         self.send_message('AcceleratorBrake', {'Accelerator':1,'Brake':0})
 
     def brake(self):
-        self.speed -=.25
+        self.speed -= 1.2
         self.send_message('AcceleratorBrake', {'Accelerator':0,'Brake':1})
 
     def steer_L(self):
+        self.steering_angle -= 7
         self.send_message('Steering', {'Steer_L':1,'Steer_R':0})
 
     def steer_R(self):
+        self.steering_angle += 7
         self.send_message('Steering', {'Steer_L':0,'Steer_R':1})
 
     def turn_L(self):
+        self.turnSig_state = 1
         self.send_message('TurnSignals', {'Turn_Sig_L': 1, 'Turn_Sig_R': 0})
 
     def turn_R(self):
+        self.turnSig_state = 2
         self.send_message('TurnSignals', {'Turn_Sig_L': 0, 'Turn_Sig_R': 1})
 
 
@@ -104,12 +128,16 @@ class MainLoop():
                 #self.controller.turn()
             if key.char=='w':
                 self.t_thread.pressed.add('w')
+                self.controller.isDriving = 1
             if key.char=='s':
                 self.t_thread.pressed.add('s')
+                self.controller.isDriving = 1
             if key.char=='a':
                 self.t_thread.pressed.add('a')
+                self.controller.isSteering = 1
             if key.char=='d':
                 self.t_thread.pressed.add('d')
+                self.controller.isSteering = 1
             if key.char=='q':
                 self.t_thread.pressed.add('q')
             if key.char=='e':
@@ -121,30 +149,38 @@ class MainLoop():
         if hasattr(key, 'char'):
             if key.char=='w':
                 self.t_thread.pressed.remove('w')
+                self.controller.isDriving = 0
             elif key.char=='s':
                 self.t_thread.pressed.remove('s')
+                self.controller.isDriving = 0
             elif key.char=='a':
                 self.t_thread.pressed.remove('a')
+                self.controller.isSteering = 0
             elif key.char=='d':
                 self.t_thread.pressed.remove('d')
+                self.controller.isSteering = 0
             elif key.char=='q':
                 if self.q_state==0:
                     self.q_state = 1
                     if self.e_state == 1:
                         self.e_state = 0
                         self.t_thread.pressed.remove('e')
+                        self.controller.turnSig_state = 1
                 else:
                     self.t_thread.pressed.remove('q')
                     self.q_state = 0
+                    self.controller.turnSig_state = 0
             elif key.char=='e':
                 if self.e_state==0:
                     self.e_state = 1
                     if self.q_state == 1:
                         self.q_state = 0
                         self.t_thread.pressed.remove('q')
+                        self.controller.turnSig_state = 2
                 else:
                     self.t_thread.pressed.remove('e')
                     self.e_state = 0
+                    self.controller.turnSig_state = 0
         if key == Key.esc:
             # Stop listener
             return False
@@ -153,7 +189,8 @@ class MainLoop():
     def mainLoop(self):
         # Collect events until released
         os.system("stty -echo")
-        print("Press w to accelerate, s to brake")
+        print("\nControls: W (accelerate), S (brake), A (steer left), D (steer right), Q (left turn signal), "
+              "E (right turn signal)\n")
         self.c_thread.start()
         self.t_thread.start()
         self.g_thread.start()
@@ -194,7 +231,7 @@ class ControlThread(Thread):
     def run(self):
         while True:
             self.controller.update()
-            sleep(.5)
+            sleep(.2)
 
 class GraphicsThread(Thread):
     def __init__(self, controller):
@@ -207,8 +244,11 @@ class GraphicsThread(Thread):
             self.updateGui()
 
     def updateGui(self):
-        self.gui.rotate_speed_needle(self.controller.speed)
+        if self.controller.speed >= 1:
+            self.gui.rotate_speed_needle(self.controller.speed)
         self.gui.rotate_tac_needle(self.controller.rpm * (220/8))
+        self.gui.rotate_steering_wheel(self.controller.steering_angle)
+        self.gui.turnSig_state(self.controller.turnSig_state)
         self.gui.refresh_gui()
 
     
