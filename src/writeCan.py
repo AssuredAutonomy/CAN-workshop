@@ -164,8 +164,12 @@ class MainLoop():
                     self.q_state = 1
                     if self.e_state == 1:
                         self.e_state = 0
-                        self.t_thread.pressed.remove('e')
                         self.controller.turnSig_state = 1
+                        try:
+                            self.t_thread.pressed.remove('e')
+                        except:
+                            print("\nWarning! Changing turn signals too fast!")
+                            return
                 else:
                     self.t_thread.pressed.remove('q')
                     self.q_state = 0
@@ -175,8 +179,12 @@ class MainLoop():
                     self.e_state = 1
                     if self.q_state == 1:
                         self.q_state = 0
-                        self.t_thread.pressed.remove('q')
                         self.controller.turnSig_state = 2
+                        try:
+                            self.t_thread.pressed.remove('q')
+                        except:
+                            print("\nWarning! Changing turn signals too fast!")
+                            return
                 else:
                     self.t_thread.pressed.remove('e')
                     self.e_state = 0
