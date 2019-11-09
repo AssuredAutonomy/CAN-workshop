@@ -7,12 +7,17 @@ import argparse
 import signal
 import math
 import subprocess
+import secrets
 from time import sleep
 from threading import Thread, Event
 from can.interface import Bus
 from pynput.keyboard import Key, Listener
 from graphics import Gui
 
+'''
+    pressing a button will send a message on the bus, the reader thread will read the message and send it to the controller decoder, the controller will respond to the message
+
+'''
 class Control():
     def __init__(self, source, bus):
         self.db = cantools.database.load_file(source)
@@ -29,27 +34,21 @@ class Control():
         self.turnSig_state = 0
 
     def decodeMessage(self, message):
-        '''
-                        if 'w' in self.pressed and 's' not in self.pressed:
-                    self.controller.send_message('AcceleratorBrake', {'Accelerator':1,'Brake':0})
-                elif 's' in self.pressed:
-                    self.controller.send_message('AcceleratorBrake', {'Accelerator':0,'Brake':1})
-                if 'a' in self.pressed and 'd' not in self.pressed:
-                    self.controller.send_message('Steering', {'Steer_L':1,'Steer_R':0})
-                elif 'd' in self.pressed:
-                    self.send_message('Steering', {'Steer_L':0,'Steer_R':1})
-                if 'q' in self.pressed and 'd' not in self.pressed:
-                    self.send_message('TurnSignals', {'Turn_Sig_L': 1, 'Turn_Sig_R': 0})
-                elif 'e' in self.pressed:
-                    self.send_message('TurnSignals', {'Turn_Sig_L': 0, 'Turn_Sig_R': 1})
-        '''
-        #sys.stdout.write("\rHERE{}".format(message.arbitration_id))
         if message.arbitration_id == 0x112:
-            print(message.data[0])
-            if message.data & 0x3 == 0x1:
+            if message.data[0] & 0x3 == 0x1:
                 self.accelerate()
-            elif message.data & 0x3 == 0x2:
+            elif message.data[0] & 0x3 == 0x2:
                 self.brake()
+        elif message.arbitration_id == 0x113:
+            if message.data[0] & 0x3 == 0x1:
+                self.steer_L()
+            elif message.data[0] & 0x3 == 0x2:
+                self.steer_R()
+        elif message.arbitration_id == 0x115:
+            if message.data[0] & 0x3 == 0x1:
+                self.turn_L()
+            elif message.data[0] & 0x3 == 0x2:
+                self.turn_R()
 
     def update(self):
 
@@ -108,7 +107,11 @@ class Control():
         except:
             print("Error encoding data {}.\nValid signals are {}\nNo message sent".format(data, m.signals))
             return
-
+        byte_arr = list(data)
+        for sig in m.signals:
+            for x in range(sig.offset+sig.length,len(byte_arr)):
+                byte_arr[x] = int.from_bytes(secrets.token_bytes(1), byteorder="little")
+        data = list(byte_arr)
         self.bus.send(can.Message(arbitration_id=m.frame_id, data=data, is_extended_id=False))
 
     def phys(self):
@@ -213,7 +216,8 @@ class MainLoop():
         if key == Key.esc:
             # Stop listener
             self.controller.running = False
-            return False
+            os.system('stty echo')
+            sys.exit(0)
         self.controller.update()
 
     def mainLoop(self):
@@ -227,10 +231,6 @@ class MainLoop():
         self.r_thread.start()
         with Listener(on_press=self.on_press,on_release=self.on_release, suppress=True) as listener:
             listener.join()
-        self.c_thread.join()
-        self.t_thread.join()
-        self.g_thread.join()
-        self.r_thread.join()
 
 class TimerThread(Thread):
     def __init__(self, controller, event):
@@ -321,9 +321,9 @@ if __name__ =="__main__":
     args = getArgs()
     bustype = 'socketcan'
     #filters = [{"can_id": 0x118, "can_mask": 0xFF8, "extended": False}]
-    bus = can.interface.Bus(args.socket, bustype=bustype)
+    bus = can.ThreadSafeBus(args.socket, bustype=bustype)
     controller = Control(args.dbc, bus)
-    if args.random:
+    if not args.random:
         subprocess.Popen(["cangen", "vcan0"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     m = MainLoop(controller)
     m.mainLoop()
