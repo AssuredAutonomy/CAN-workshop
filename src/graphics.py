@@ -16,7 +16,6 @@ class Gui():
         self.turnSig_R = self.factory.from_image("img/turnSig_R.png")
         self.steering_wheel = self.factory.from_image("img/steering_wheel2.png")
 
-
         def set_gui():
             self.tac_needle.x = 115
             self.tac_needle.y = 78
