@@ -12,7 +12,7 @@ from time import sleep
 from threading import Thread, Event
 from can.interface import Bus
 from pynput.keyboard import Key, Listener
-from graphics import Gui
+from graphics2 import Gui
 
 '''
     pressing a button will send a message on the bus, the reader thread will read the message and send it to the controller decoder, the controller will respond to the message
@@ -281,8 +281,9 @@ class GraphicsThread(Thread):
             self.gui.rotate_speed_needle(self.controller.speed)
         self.gui.rotate_tac_needle(self.controller.rpm * (220/8))
         self.gui.rotate_steering_wheel(self.controller.steering_angle)
-        self.gui.turnSig_state(self.controller.turnSig_state)
-        self.gui.refresh_gui()
+        #self.gui.turnSig_state(self.controller.turnSig_state)
+        #self.gui.refresh_gui()
+        self.gui.on_execute()
 
 class ReadThread(Thread):
     def __init__(self, controller):
