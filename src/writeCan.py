@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 import os, sys
 import json
+import pygame
+from pygame.locals import K_w
+from pygame.locals import K_s
+from pygame.locals import K_a
+from pygame.locals import K_d
+from pygame.locals import K_q
+from pygame.locals import K_e
 import can
 import cantools
 import argparse
@@ -80,7 +87,7 @@ class Control():
         self.phys()
         sys.stdout.write("\rspeed: {} rpm: {} Steer Angle: {} TurnSig: {}".format(self.speed, self.rpm, self.steering_angle, self.turnSig_state))
         sys.stdout.flush()
-    
+
     def get_rpm(self):
         # We'll say our tires are .05 meters
         circ = math.pi * .5
@@ -119,19 +126,19 @@ class Control():
 
     def accelerate(self):
         self.speed += 1.5
-        
+
     def brake(self):
         self.speed -= 1.2
-        
+
     def steer_L(self):
         self.steering_angle -= 7
-        
+
     def steer_R(self):
         self.steering_angle += 7
-        
+
     def turn_L(self):
         self.turnSig_state = 1
-        
+
     def turn_R(self):
         self.turnSig_state = 2
 
@@ -220,6 +227,80 @@ class MainLoop():
             sys.exit(0)
         self.controller.update()
 
+    def parse_events(self):
+        for event in pygame.event.get():
+            if event.type ==pygame.QUIT:
+                pass
+
+            elif event.type == pygame.KEYDOWN:
+                if event.key == K_w:
+                    self.t_thread.pressed.add('w')
+                    self.controller.isDriving = 1
+                elif event.key == K_s:
+                    self.t_thread.pressed.add('s')
+                    self.controller.isDriving = 1
+                elif event.key == K_a:
+                    self.t_thread.pressed.add('a')
+                    self.controller.isSteering = 1
+                elif event.key == K_d:
+                    self.t_thread.pressed.add('d')
+                    self.controller.isSteering = 1
+                elif event.key == K_q:
+                    self.t_thread.pressed.add('q')
+                elif event.key == K_e:
+                    self.t_thread.pressed.add('e')
+                self.releaseEvent.set()
+
+            elif event.type == pygame.KEYUP:
+                if event.key == K_w:
+                    self.t_thread.pressed.remove('w')
+                    self.controller.isDriving = 0
+
+                elif event.key == K_s:
+                    self.t_thread.pressed.remove('s')
+                    self.controller.isDriving = 0
+
+                elif event.key == K_a:
+                    self.t_thread.pressed.remove('a')
+                    self.controller.isSteering = 0
+
+                elif event.key == K_d:
+                    self.t_thread.pressed.remove('d')
+                    self.controller.isSteering = 0
+
+                elif event.key == K_q:
+                    if self.q_state==0:
+                        self.q_state = 1
+                    if self.e_state == 1:
+                        self.e_state = 0
+                        self.controller.turnSig_state = 1
+                        try:
+                            self.t_thread.pressed.remove('e')
+                        except:
+                            print("\nWarning! Changing turn signals too fast!")
+                            return
+                    else:
+                        self.t_thread.pressed.remove('q')
+                        self.q_state = 0
+                        self.controller.turnSig_state = 0
+
+                elif event.key == K_e:
+                    if self.e_state==0:
+                        self.e_state = 1
+                        if self.q_state == 1:
+                            self.q_state = 0
+                            self.controller.turnSig_state = 2
+                            try:
+                                self.t_thread.pressed.remove('q')
+                            except:
+                                print("\nWarning! Changing turn signals too fast!")
+                                return
+                    else:
+                        self.t_thread.pressed.remove('e')
+                        self.e_state = 0
+                        self.controller.turnSig_state = 0
+                self.controller.update()
+
     def mainLoop(self):
         # Collect events until released
         os.system("stty -echo")
@@ -229,8 +310,11 @@ class MainLoop():
         self.t_thread.start()
         self.g_thread.start()
         self.r_thread.start()
-        with Listener(on_press=self.on_press,on_release=self.on_release, suppress=True) as listener:
-            listener.join()
+        #with Listener(on_press=self.on_press,on_release=self.on_release, suppress=True) as listener:
+            #listener.join()
+
+        while True:
+             self.parse_events()
 
 class TimerThread(Thread):
     def __init__(self, controller, event):
@@ -254,7 +338,7 @@ class TimerThread(Thread):
                     self.controller.send_message('TurnSignals', {'Turn_Sig_L': 1, 'Turn_Sig_R': 0})
                 elif 'e' in self.pressed:
                     self.controller.send_message('TurnSignals', {'Turn_Sig_L': 0, 'Turn_Sig_R': 1})
-                sleep(.05)              
+                sleep(.05)
 
 class ControlThread(Thread):
     def __init__(self, controller):
@@ -303,6 +387,7 @@ def is_valid_file(parser, arg):
         parser.error("File does not exist {}".format(arg))
     else:
         return arg
+
 def getArgs():
     parser = argparse.ArgumentParser(description="Script to write CAN messages to given virtual CAN socket.")
     parser.add_argument("-s", "--socket", metavar="SOCKET", help="Name of virtual CAN socket, e.g. vcan0.", default='vcan0')

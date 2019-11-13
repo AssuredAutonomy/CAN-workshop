@@ -1,5 +1,98 @@
 import pygame
+import random
 from pygame.locals import *
+WHITE = (255, 255, 255)
+
+class _Steering_Wheel(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        try:
+            self.og_image = pygame.image.load("img/steering_wheel2.png")
+        except pygame.error as message:
+            print('Cannot load graphics')
+            raise SystemExit(message)
+
+        self.image = self.og_image
+        self.rect = self.image.get_rect()
+        self.rect.center = (500,480)
+        self.angle = 0
+
+    def update(self):
+        self.image = pygame.transform.rotate(self.og_image, self.angle)
+        x, y = self.rect.center  # Save its current center.
+        self.rect = self.image.get_rect()  # Replace old rect with new rect.
+        self.rect.center = (x, y)  # Put the new rect's center at old center.
+
+class _Turn_R_Needle(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        try:
+            self.og_image = pygame.image.load("img/turnSig_R.png")
+        except pygame.error as message:
+            print('Cannot load graphics')
+            raise SystemExit(message)
+
+        self.image = self.og_image
+        self.rect = self.image.get_rect()
+        self.rect.center = (567,115)
+        self.state = 0
+
+class _Turn_L_Needle(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        try:
+            self.og_image = pygame.image.load("img/turnSig_L.png")
+        except pygame.error as message:
+            print('Cannot load graphics')
+            raise SystemExit(message)
+
+        self.image = self.og_image
+        self.rect = self.image.get_rect()
+        self.rect.center = (450,115)
+        self.state = 0
+
+class _Speed_Needle(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        try:
+            self.og_image = pygame.image.load("img/Pointer.png")
+            self.og_image = pygame.transform.scale(self.og_image,(300,300))
+        except pygame.error as message:
+            print('Cannot load graphics')
+            raise SystemExit(message)
+
+        self.image = self.og_image
+        self.rect = self.image.get_rect()
+        self.rect.center = (724,208)
+        self.angle = 0
+
+    def update(self):
+        self.image = pygame.transform.rotate(self.og_image, self.angle)
+        x, y = self.rect.center  # Save its current center.
+        self.rect = self.image.get_rect()  # Replace old rect with new rect.
+        self.rect.center = (x, y)  # Put the new rect's center at old center.
+
+class _Tac_Needle(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        try:
+            self.og_image = pygame.image.load("img/Pointer.png")
+            self.og_image = pygame.transform.scale(self.og_image,(300,300))
+        except pygame.error as message:
+            print('Cannot load graphics')
+            raise SystemExit(message)
+
+        self.image = self.og_image
+        self.rect = self.image.get_rect()
+        self.rect.center = (295,208)
+        self.angle = 0
+
+    def update(self):
+        self.image = pygame.transform.rotate(self.og_image, self.angle)
+        x, y = self.rect.center  # Save its current center.
+        self.rect = self.image.get_rect()  # Replace old rect with new rect.
+        self.rect.center = (x, y)  # Put the new rect's center at old center.
+
 
 class Gui(object):
     def __init__(self):
@@ -10,81 +103,58 @@ class Gui(object):
         self._display_surf.fill(white)
         self._running = True
 
-        self.og_ipc = pygame.image.load("img/IPC_2.png")
-        self.og_tac_needle = pygame.image.load("img/Pointer.png")
-        self.og_speed_needle = pygame.image.load("img/Pointer.png")
-        self.og_turnSig_L = pygame.image.load("img/turnSig_L.png")
-        self.og_turnSig_R = pygame.image.load("img/turnSig_R.png")
-        self.og_steering_wheel = pygame.image.load("img/steering_wheel2.png")
+        try:
+            self.steering_wheel=_Steering_Wheel()
+            self.speed_needle = _Speed_Needle()
+            self.tac_needle = _Tac_Needle()
 
-        self.steering_wheel = self.og_steering_wheel
-        self.steering_rect = self.steering_wheel.get_rect()
-        self.steering_rect.center = (500,480)
-        self.steering_angle = 90
+            self.block_list = pygame.sprite.Group()
+            self.block_list.add(self.steering_wheel)
+            self.block_list.add(self.speed_needle)
+            self.block_list.add(self.tac_needle)
 
-        self.og_speed_needle = pygame.transform.scale(self.og_speed_needle,(300,300))
-        self.speed_needle = self.og_speed_needle
-        self.speed_rect = self.speed_needle.get_rect()
-        self.speed_rect.center = (723,210)
-        self.speed_angle = 0
+            self.right_turn_signal = _Turn_R_Needle()
+            self.left_turn_signal = _Turn_L_Needle()
 
-        self.og_tac_needle = pygame.transform.scale(self.og_tac_needle,(300,300))
-        self.tac_needle = self.og_tac_needle
-        self.tac_rect = self.tac_needle.get_rect()
-        self.tac_rect.center = (293,208)
-        self.tac_angle = 180
+            self.og_ipc = pygame.image.load("img/IPC_2.png")
 
-
-        self._display_surf.blit(self.og_ipc,(0,-50))
+        except pygame.error as message:
+            print('Cannot load graphics')
+            raise SystemExit(message)
 
     def rotate_tac_needle(self, angle):
-        self.tac_angle = angle
+        self.tac_needle.angle = 200-angle
 
     def rotate_speed_needle(self, angle):
-        self.speed_angle = angle
+        self.speed_needle.angle = 200-angle
 
     def rotate_steering_wheel(self, angle):
-        self.steering_angle = angle
-
-    def on_event(self, event):
-        if event.type == pygame.QUIT:
-            self._running = False
+        self.steering_wheel.angle = 360-angle
 
     def on_loop(self):
-        self.tac_needle = pygame.transform.rotate(self.og_tac_needle, self.tac_angle)
-        x,y = self.tac_rect.center
-        self.tac_rect = self.tac_needle.get_rect()
-        self.tac_rect.center = (x,y)
 
-        self.speed_needle = pygame.transform.rotate(self.og_speed_needle, self.speed_angle)
-        x,y = self.speed_rect.center
-        self.speed_rect = self.speed_needle.get_rect()
-        self.speed_rect.center = (x,y)
-
-        self.steering_wheel = pygame.transform.rotate(self.og_steering_wheel, self.steering_angle)
-        x,y = self.steering_rect.center
-        self.steering_rect = self.steering_wheel.get_rect()
-        self.steering_rect.center = (x,y)
+        self.right_turn_signal.state = 1
+        self.left_turn_signal.state = 0
 
     def on_render(self):
-        self._display_surf.blit(self.tac_needle,self.tac_rect)
-        self._display_surf.blit(self.speed_needle,self.speed_rect)
-        self._display_surf.blit(self.steering_wheel,self.steering_rect)
-        pygame.display.update()
+
+        self._display_surf.fill(WHITE)
+        self._display_surf.blit(self.og_ipc,(0,-50))
+
+        if self.left_turn_signal.state == 1:
+            self._display_surf.blit(self.left_turn_signal.image,self.left_turn_signal.rect)
+
+        if self.right_turn_signal.state == 1:
+            self._display_surf.blit(self.right_turn_signal.image,self.right_turn_signal.rect)
+
+        self.block_list.draw(self._display_surf)
+        self.block_list.update()
+        pygame.display.flip()
 
     def on_cleanup(self):
         pygame.quit()
 
     def on_execute(self):
 
-        while( self._running ):
-            for event in pygame.event.get():
-                self.on_event(event)
-            self.on_loop()
-            self.on_render()
-        self.on_cleanup()
-
-if __name__ == "__main__" :
-    theApp = Gui()
-    theApp.on_execute()
-
+        self.on_loop()
+        self.on_render()
