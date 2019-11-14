@@ -18,7 +18,6 @@ import secrets
 from time import sleep
 from threading import Thread, Event
 from can.interface import Bus
-from pynput.keyboard import Key, Listener
 from graphics2 import Gui
 
 '''
@@ -166,80 +165,6 @@ class MainLoop():
         self.q_state = 0
         self.e_state = 0
 
-    def on_press(self, key):
-        if hasattr(key, 'char'):
-            #if key.char=='q':
-                #self.controller.turn()
-            if key.char=='w':
-                self.t_thread.pressed.add('w')
-                self.controller.isDriving = 1
-            if key.char=='s':
-                self.t_thread.pressed.add('s')
-                self.controller.isDriving = 1
-            if key.char=='a':
-                self.t_thread.pressed.add('a')
-                self.controller.isSteering = 1
-            if key.char=='d':
-                self.t_thread.pressed.add('d')
-                self.controller.isSteering = 1
-            if key.char=='q':
-                self.t_thread.pressed.add('q')
-            if key.char=='e':
-                self.t_thread.pressed.add('e')
-        self.releaseEvent.set()
-
-    def on_release(self, key):
-        #self.releaseEvent.clear()
-        if hasattr(key, 'char'):
-            if key.char=='w':
-                self.t_thread.pressed.remove('w')
-                self.controller.isDriving = 0
-            elif key.char=='s':
-                self.t_thread.pressed.remove('s')
-                self.controller.isDriving = 0
-            elif key.char=='a':
-                self.t_thread.pressed.remove('a')
-                self.controller.isSteering = 0
-            elif key.char=='d':
-                self.t_thread.pressed.remove('d')
-                self.controller.isSteering = 0
-            elif key.char=='q':
-                if self.q_state==0:
-                    self.q_state = 1
-                    if self.e_state == 1:
-                        self.e_state = 0
-                        self.controller.turnSig_state = 1
-                        try:
-                            self.t_thread.pressed.remove('e')
-                        except:
-                            print("\nWarning! Changing turn signals too fast!")
-                            return
-                else:
-                    self.t_thread.pressed.remove('q')
-                    self.q_state = 0
-                    self.controller.turnSig_state = 0
-            elif key.char=='e':
-                if self.e_state==0:
-                    self.e_state = 1
-                    if self.q_state == 1:
-                        self.q_state = 0
-                        self.controller.turnSig_state = 2
-                        try:
-                            self.t_thread.pressed.remove('q')
-                        except:
-                            print("\nWarning! Changing turn signals too fast!")
-                            return
-                else:
-                    self.t_thread.pressed.remove('e')
-                    self.e_state = 0
-                    self.controller.turnSig_state = 0
-        if key == Key.esc:
-            # Stop listener
-            self.controller.running = False
-            os.system('stty echo')
-            sys.exit(0)
-        self.controller.update()
-
     def parse_events(self):
         for event in pygame.event.get():
             if event.type ==pygame.QUIT:
@@ -247,17 +172,39 @@ class MainLoop():
 
             elif event.type == pygame.KEYDOWN:
                 if event.key == K_w:
-                    self.t_thread.pressed.add('w')
-                    self.controller.isDriving = 1
+                    if self.controller.isDriving == 0:
+                        self.t_thread.pressed.add('w')
+                        self.controller.isDriving = 1
+                    else:
+                        self.t_thread.pressed.remove('w')
+                        self.controller.isDriving = 0
+
                 elif event.key == K_s:
-                    self.t_thread.pressed.add('s')
-                    self.controller.isDriving = 1
+                    pass
+
                 elif event.key == K_a:
-                    self.t_thread.pressed.add('a')
-                    self.controller.isSteering = 1
+                    if self.controller.isSteering == 0:
+                        self.t_thread.pressed.add('a')
+                        self.controller.isSteering = 1
+                    else:
+                        if 'd' in self.t_thread.pressed:
+                            self.t_thread.pressed.remove('d')
+                            self.t_thread.pressed.add('a')
+                        else:
+                            self.t_thread.pressed.remove('a')
+                            self.controller.isSteering = 0
                 elif event.key == K_d:
-                    self.t_thread.pressed.add('d')
-                    self.controller.isSteering = 1
+                    if self.controller.isSteering == 0:
+                        self.t_thread.pressed.add('d')
+                        self.controller.isSteering = 1
+                    else:
+                        if 'a' in self.t_thread.pressed:
+                            self.t_thread.pressed.remove('a')
+                            self.t_thread.pressed.add('d')
+                        else:
+                            self.t_thread.pressed.remove('d')
+                            self.controller.isSteering = 0
+
                 elif event.key == K_q:
                     #self.t_thread.pressed.add('q')
                     if self.controller.turnSig_state == 1:
@@ -284,27 +231,25 @@ class MainLoop():
 
             elif event.type == pygame.KEYUP:
                 if event.key == K_w:
-                    self.t_thread.pressed.remove('w')
-                    self.controller.isDriving = 0
+                    pass
 
                 elif event.key == K_s:
-                    self.t_thread.pressed.remove('s')
-                    self.controller.isDriving = 0
+                    pass
 
                 elif event.key == K_a:
-                    self.t_thread.pressed.remove('a')
-                    self.controller.isSteering = 0
+                    pass
+                    #self.t_thread.pressed.remove('a')
+                    #self.controller.isSteering = 0
 
                 elif event.key == K_d:
-                    self.t_thread.pressed.remove('d')
-                    self.controller.isSteering = 0
+                    pass
+                    #self.t_thread.pressed.remove('d')
+                    #self.controller.isSteering = 0
 
                 elif event.key == K_q:
                     pass
                 elif event.key == K_e:
                     pass
-
-                self.controller.update()
 
     def mainLoop(self):
         # Collect events until released
@@ -315,8 +260,6 @@ class MainLoop():
         self.t_thread.start()
         self.g_thread.start()
         self.r_thread.start()
-        #with Listener(on_press=self.on_press,on_release=self.on_release, suppress=True) as listener:
-            #listener.join()
 
         while True:
              self.parse_events()
