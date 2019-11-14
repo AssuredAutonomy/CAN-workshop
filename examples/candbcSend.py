@@ -34,5 +34,5 @@ def send_message(name, data, bus):
 if __name__ == '__main__':
     bus = can.interface.Bus(bustype='socketcan', channel='vcan1', bitrate=250000)
     while True:
-        send_message('PhysSensors', {'Service_Light':0,'RPM':6, 'Vehicle_Speed':120},bus)
+        send_message('PhysSensors', {'Vehicle_Speed':120, 'RPM':9,'Service_Light':0},bus)
         time.sleep(0.1)

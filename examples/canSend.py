@@ -13,7 +13,7 @@ import time
 
 def send_one():
 
-    bus = can.interface.Bus(bustype='socketcan', channel='vcan0', bitrate=250000)
+    bus = can.interface.Bus(bustype='socketcan', channel='vcan1', bitrate=250000)
     msg = can.Message(arbitration_id=0x111,
                       data=[0x33, 0x6C, 0x14, 0x7B, 0x82, 0x7F, 0xFF, 0xFF],
                       is_extended_id=False)

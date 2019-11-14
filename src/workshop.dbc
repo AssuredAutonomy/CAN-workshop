@@ -1,7 +1,7 @@
 VERSION ""
 
 
-NS_ : 
+NS_ :
 	NS_DESC_
 	CM_
 	BA_DEF_
@@ -44,7 +44,7 @@ BO_ 277 TurnSignals: 8 KB
 
 BO_ 276 PhysSensors: 8 ECU
  SG_ Service_Light : 32|6@1+ (1,0) [0|127] ""  IPC
- SG_ RPM : 16|16@1+ (1,0) [0|8] "RPM"  IPC
+ SG_ RPM : 16|16@1+ (1,0) [0|8000] "RPM"  IPC
  SG_ Vehicle_Speed : 0|16@1+ (1,0) [0|260] "kph"  IPC
 
 BO_ 275 Steering: 8 KB

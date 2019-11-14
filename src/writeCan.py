@@ -33,6 +33,8 @@ class Control():
         self.acceleration = 0
         self.speed = 0
         self.rpm = 0
+        self.ipc_speed = 0
+        self.ipc_rpm = 0
         self.dt = .12
         self.steering_angle = 0
         self.isSteering = 0
@@ -41,6 +43,17 @@ class Control():
         self.turnSig_state = 0
 
     def decodeMessage(self, message):
+
+        try:
+            m = self.db.decode_message(message.arbitration_id, message.data)
+            for key in m:
+                if key == 'Vehicle_Speed':
+                    self.ipc_speed = m[key]
+                elif key == 'RPM':
+                    self.ipc_rpm = m[key]
+        except:
+            pass
+
         if message.arbitration_id == 0x112:
             if message.data[0] & 0x3 == 0x1:
                 self.accelerate()
@@ -122,7 +135,7 @@ class Control():
         self.bus.send(can.Message(arbitration_id=m.frame_id, data=data, is_extended_id=False))
 
     def phys(self):
-        self.send_message('PhysSensors', {'Service_Light':0,'RPM':self.rpm, 'Vehicle_Speed':self.speed})
+        self.send_message('PhysSensors', {'Service_Light':0,'RPM':int(self.rpm*10), 'Vehicle_Speed':self.speed})
 
     def accelerate(self):
         self.speed += 1.5
@@ -354,8 +367,8 @@ class GraphicsThread(Thread):
 
     def updateGui(self):
         if self.controller.speed >= 1:
-            self.gui.rotate_speed_needle(self.controller.speed)
-        self.gui.rotate_tac_needle(self.controller.rpm * (220/8))
+            self.gui.rotate_speed_needle(self.controller.ipc_speed)
+        self.gui.rotate_tac_needle((self.controller.ipc_rpm/10) * (220/8))
         self.gui.rotate_steering_wheel(self.controller.steering_angle)
         self.gui.turnSig_state(self.controller.turnSig_state)
         #self.gui.refresh_gui()
