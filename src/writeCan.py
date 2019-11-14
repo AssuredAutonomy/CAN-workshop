@@ -143,13 +143,13 @@ class Control():
         self.turnSig_state = 2
 
 class MainLoop():
-    def __init__(self, controller):
+    def __init__(self, controller, network):
         self.controller = controller
         self.releaseEvent = Event()
         self.c_thread = ControlThread(self.controller)
         self.t_thread = TimerThread(self.controller, self.releaseEvent)
         self.g_thread = GraphicsThread(self.controller)
-        self.r_thread = ReadThread(self.controller)
+        self.r_thread = ReadThread(self.controller,network)
         self.q_state = 0
         self.e_state = 0
 
@@ -246,9 +246,27 @@ class MainLoop():
                     self.t_thread.pressed.add('d')
                     self.controller.isSteering = 1
                 elif event.key == K_q:
-                    self.t_thread.pressed.add('q')
+                    #self.t_thread.pressed.add('q')
+                    if self.controller.turnSig_state == 1:
+                        self.g_thread.gui.turnSig_state(0)
+                        self.controller.turnSig_state = 0
+                    elif self.controller.turnSig_state == 0:
+                        self.g_thread.gui.turnSig_state(1)
+                        self.controller.turnSig_state = 1
+                    else:
+                        self.g_thread.gui.turnSig_state(1)
+                        self.controller.turnSig_state = 1
                 elif event.key == K_e:
-                    self.t_thread.pressed.add('e')
+                    #self.t_thread.pressed.add('e')
+                    if self.controller.turnSig_state == 1:
+                        self.g_thread.gui.turnSig_state(2)
+                        self.controller.turnSig_state = 2
+                    elif self.controller.turnSig_state == 0:
+                        self.g_thread.gui.turnSig_state(2)
+                        self.controller.turnSig_state = 2
+                    else:
+                        self.g_thread.gui.turnSig_state(0)
+                        self.controller.turnSig_state = 0
                 self.releaseEvent.set()
 
             elif event.type == pygame.KEYUP:
@@ -269,36 +287,10 @@ class MainLoop():
                     self.controller.isSteering = 0
 
                 elif event.key == K_q:
-                    if self.q_state==0:
-                        self.q_state = 1
-                    if self.e_state == 1:
-                        self.e_state = 0
-                        self.controller.turnSig_state = 1
-                        try:
-                            self.t_thread.pressed.remove('e')
-                        except:
-                            print("\nWarning! Changing turn signals too fast!")
-                            return
-                    else:
-                        self.t_thread.pressed.remove('q')
-                        self.q_state = 0
-                        self.controller.turnSig_state = 0
-
+                    pass
                 elif event.key == K_e:
-                    if self.e_state==0:
-                        self.e_state = 1
-                        if self.q_state == 1:
-                            self.q_state = 0
-                            self.controller.turnSig_state = 2
-                            try:
-                                self.t_thread.pressed.remove('q')
-                            except:
-                                print("\nWarning! Changing turn signals too fast!")
-                                return
-                    else:
-                        self.t_thread.pressed.remove('e')
-                        self.e_state = 0
-                        self.controller.turnSig_state = 0
+                    pass
+
                 self.controller.update()
 
     def mainLoop(self):
@@ -338,7 +330,7 @@ class TimerThread(Thread):
                     self.controller.send_message('TurnSignals', {'Turn_Sig_L': 1, 'Turn_Sig_R': 0})
                 elif 'e' in self.pressed:
                     self.controller.send_message('TurnSignals', {'Turn_Sig_L': 0, 'Turn_Sig_R': 1})
-                sleep(.05)
+                sleep(0.1)
 
 class ControlThread(Thread):
     def __init__(self, controller):
@@ -348,7 +340,7 @@ class ControlThread(Thread):
     def run(self):
         while self.controller.running:
             self.controller.update()
-            sleep(.2)
+            sleep(.1)
 
 class GraphicsThread(Thread):
     def __init__(self, controller):
@@ -365,16 +357,16 @@ class GraphicsThread(Thread):
             self.gui.rotate_speed_needle(self.controller.speed)
         self.gui.rotate_tac_needle(self.controller.rpm * (220/8))
         self.gui.rotate_steering_wheel(self.controller.steering_angle)
-        #self.gui.turnSig_state(self.controller.turnSig_state)
+        self.gui.turnSig_state(self.controller.turnSig_state)
         #self.gui.refresh_gui()
         self.gui.on_execute()
 
 class ReadThread(Thread):
-    def __init__(self, controller):
+    def __init__(self, controller,network):
         super().__init__()
         self.controller = controller
         #filters = [{"can_id": 0x118, "can_mask": 0xFF8, "extended": False}]
-        self.bus = can.interface.Bus("vcan0", bustype='socketcan')
+        self.bus = can.interface.Bus(network, bustype='socketcan')
 
     def run(self):
         while controller.running:
@@ -410,8 +402,8 @@ if __name__ =="__main__":
     bus = can.ThreadSafeBus(args.socket, bustype=bustype)
     controller = Control(args.dbc, bus)
     if not args.random:
-        subprocess.Popen(["cangen", "vcan0"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    m = MainLoop(controller)
+        subprocess.Popen(["cangen", args.socket,"-L","8","-g","50"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    m = MainLoop(controller,args.socket)
     m.mainLoop()
 
 

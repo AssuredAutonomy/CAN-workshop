@@ -131,10 +131,20 @@ class Gui(object):
     def rotate_steering_wheel(self, angle):
         self.steering_wheel.angle = 360-angle
 
+    def turnSig_state(self,state):
+        if state == 0:
+            self.left_turn_signal.state = 0
+            self.right_turn_signal.state = 0
+        elif state == 1:
+            self.left_turn_signal.state = 1
+            self.right_turn_signal.state = 0
+        elif state == 2:
+            self.left_turn_signal.state = 0
+            self.right_turn_signal.state = 1
+
     def on_loop(self):
 
-        self.right_turn_signal.state = 1
-        self.left_turn_signal.state = 0
+        self.block_list.update()
 
     def on_render(self):
 
@@ -148,7 +158,6 @@ class Gui(object):
             self._display_surf.blit(self.right_turn_signal.image,self.right_turn_signal.rect)
 
         self.block_list.draw(self._display_surf)
-        self.block_list.update()
         pygame.display.flip()
 
     def on_cleanup(self):
