@@ -238,13 +238,10 @@ class MainLoop():
 
                 elif event.key == K_a:
                     pass
-                    #self.t_thread.pressed.remove('a')
-                    #self.controller.isSteering = 0
+
 
                 elif event.key == K_d:
                     pass
-                    #self.t_thread.pressed.remove('d')
-                    #self.controller.isSteering = 0
 
                 elif event.key == K_q:
                     pass
