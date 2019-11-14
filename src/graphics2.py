@@ -93,6 +93,20 @@ class _Tac_Needle(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()  # Replace old rect with new rect.
         self.rect.center = (x, y)  # Put the new rect's center at old center.
 
+class _MIL(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        try:
+            self.og_image = pygame.image.load("img/MIL.png")
+        except pygame.error as message:
+            print('Cannot load graphics')
+            raise SystemExit(message)
+
+        self.image = self.og_image
+        self.rect = self.image.get_rect()
+        self.rect.center = (510,200)
+        self.state = 0
+
 
 class Gui(object):
     def __init__(self):
@@ -115,12 +129,16 @@ class Gui(object):
 
             self.right_turn_signal = _Turn_R_Needle()
             self.left_turn_signal = _Turn_L_Needle()
+            self.mil = _MIL()
 
             self.og_ipc = pygame.image.load("img/IPC_2.png")
 
         except pygame.error as message:
             print('Cannot load graphics')
             raise SystemExit(message)
+
+    def turn_on_mil(self,state):
+        self.mil.state = state
 
     def rotate_tac_needle(self, angle):
         self.tac_needle.angle = 200-angle
@@ -156,6 +174,9 @@ class Gui(object):
 
         if self.right_turn_signal.state == 1:
             self._display_surf.blit(self.right_turn_signal.image,self.right_turn_signal.rect)
+
+        if self.mil.state == 1:
+            self._display_surf.blit(self.mil.image,self.mil.rect)
 
         self.block_list.draw(self._display_surf)
         pygame.display.flip()

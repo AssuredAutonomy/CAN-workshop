@@ -34,6 +34,7 @@ class Control():
         self.rpm = 0
         self.ipc_speed = 0
         self.ipc_rpm = 0
+        self.light = 0
         self.dt = .12
         self.steering_angle = 0
         self.isSteering = 0
@@ -50,6 +51,8 @@ class Control():
                     self.ipc_speed = m[key]
                 elif key == 'RPM':
                     self.ipc_rpm = m[key]
+                elif key == 'Service_Light':
+                    self.light = m[key]
         except:
             pass
 
@@ -311,6 +314,7 @@ class GraphicsThread(Thread):
         self.gui.rotate_tac_needle((self.controller.ipc_rpm/10) * (220/8))
         self.gui.rotate_steering_wheel(self.controller.steering_angle)
         self.gui.turnSig_state(self.controller.turnSig_state)
+        self.gui.turn_on_mil(self.controller.light)
         #self.gui.refresh_gui()
         self.gui.on_execute()
 
